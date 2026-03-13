@@ -1,65 +1,60 @@
-export default async function handler(req, res) {
+// join.js
+const express = require('express');
+const fetch = require('node-fetch'); // npm install node-fetch@2
+const app = express();
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ success:false, msg:"POST only" });
-  }
+app.use(express.json());
 
-  try {
+// POST /api/join
+app.post('/api/join', async (req, res) => {
+    const { code } = req.body;
 
-    let body = req.body;
-
-    if (typeof body === "string") {
-      body = JSON.parse(body);
+    if (!code) {
+        return res.status(400).json({ success: false, msg: "Missing game code" });
     }
 
-    const { id, name } = body;
+    try {
+        // Example Blooket join URL (adjust as needed)
+        const response = await fetch(`https://api.blooket.com/api/join/${code}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ /* your payload here */ })
+        });
 
-    if (!id || !name) {
-      return res.status(400).json({
-        success:false,
-        msg:"Missing id or name"
-      });
+        const text = await response.text();
+
+        // Try to parse JSON
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // Not JSON, treat as HTML or plain text
+            data = { raw: text };
+        }
+
+        // Send JSON back to frontend
+        res.json({ success: true, data });
+
+    } catch (err) {
+        console.error("Join error:", err);
+        res.status(500).json({ success: false, msg: "Server error", error: err.toString() });
     }
+});
 
-    const r = await fetch("https://play.blooket.com/api/firebase/join", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "origin": "https://play.blooket.com",
-        "referer": "https://play.blooket.com/"
-      },
-      body: JSON.stringify({
-        id,
-        name
-      })
-    });
+// Example frontend-friendly clipboard endpoint
+app.post('/api/copy', (req, res) => {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ success: false, msg: "No text provided" });
 
-    const text = await r.text();
-
-    // detect Cloudflare / HTML response
-    if (text.startsWith("<!DOCTYPE")) {
-      return res.status(500).json({
-        success:false,
-        msg:"Blooket blocked the request (Cloudflare protection)"
-      });
+    try {
+        require('child_process').execSync(`echo ${text.replace(/"/g, '\\"')} | clip`);
+        res.json({ success: true, msg: "Copied to clipboard" });
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "Failed to copy", error: err.toString() });
     }
+});
 
-    const data = JSON.parse(text);
-
-    return res.json({
-      success:true,
-      fbToken:data.fbToken,
-      fbShardURL:data.fbShardURL
-    });
-
-  } catch (err) {
-
-    return res.status(500).json({
-      success:false,
-      msg:err.message
-    });
-
-  }
-
-}
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
