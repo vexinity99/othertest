@@ -1,14 +1,13 @@
 export default async function handler(req, res) {
 
   if (req.method !== "POST") {
-    return res.status(405).json({ success:false, msg:"Only POST allowed" });
+    return res.status(405).json({ success:false, msg:"POST only" });
   }
 
   try {
 
     let body = req.body;
 
-    // Vercel sometimes sends body as string
     if (typeof body === "string") {
       body = JSON.parse(body);
     }
@@ -25,7 +24,8 @@ export default async function handler(req, res) {
     const r = await fetch("https://fb.blooket.com/c/firebase/join", {
       method: "POST",
       headers: {
-        "content-type": "application/json"
+        "content-type": "application/json",
+        "user-agent": "Mozilla/5.0"
       },
       body: JSON.stringify({
         id,
@@ -33,20 +33,41 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await r.json();
+    const text = await r.text();
 
-    return res.status(200).json({
-      success: true,
-      fbToken: data.fbToken,
-      fbShardURL: data.fbShardURL
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return res.status(500).json({
+        success:false,
+        msg:"Blooket returned invalid response",
+        raw:text.slice(0,200)
+      });
+    }
+
+    if (!data.fbToken) {
+      return res.status(500).json({
+        success:false,
+        msg:"Token not returned",
+        data
+      });
+    }
+
+    return res.json({
+      success:true,
+      fbToken:data.fbToken,
+      fbShardURL:data.fbShardURL
     });
 
   } catch (err) {
 
     return res.status(500).json({
       success:false,
-      msg: err.message
+      msg:err.message
     });
 
   }
+
 }
