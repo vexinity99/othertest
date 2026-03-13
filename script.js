@@ -325,7 +325,7 @@ break;
 }
 document.querySelector("#drag").addEventListener("mouseup",e=>{dragging=false;});
 async function genToken(gid,name){
-const {fbToken,fbShardURL} = await fetch("join",{body:JSON.stringify({id:gid,name:name}),headers:{"Content-Type":"application/json"},method:"POST"}).then(e=>e.json());
+const {fbToken,fbShardURL} = await fetch("/api/join",{body:JSON.stringify({id:gid,name:name}),headers:{"Content-Type":"application/json"},method:"POST"}).then(e=>e.json());
 return {gid,name,fbToken,fbShardURL};
 }
 async function useToken(token){
@@ -351,7 +351,7 @@ botinfo.connecting = true;
 botinfo.name = name;
 botinfo.gid = gid;
 updateStatus("Fetching token...");
-const body = reqbody ? reqbody : await fetch("join",{body:JSON.stringify({id:gid,name:name}),headers:{"Content-Type":"application/json"},method:"POST"}).then(e=>e.json());
+const body = reqbody ? reqbody : await fetch("/api/join",{body:JSON.stringify({id:gid,name:name}),headers:{"Content-Type":"application/json"},method:"POST"}).then(e=>e.json());
 updateStatus("Connecting to game...");
 if(body.success){
 const liveApp = initializeApp({
