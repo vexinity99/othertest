@@ -1,10 +1,26 @@
 export default async function handler(req, res) {
+
   if (req.method !== "POST") {
-    return res.status(405).json({ success: false, msg: "Method not allowed" });
+    return res.status(405).json({ success:false, msg:"Only POST allowed" });
   }
 
   try {
-    const { id, name } = req.body;
+
+    let body = req.body;
+
+    // Vercel sometimes sends body as string
+    if (typeof body === "string") {
+      body = JSON.parse(body);
+    }
+
+    const { id, name } = body;
+
+    if (!id || !name) {
+      return res.status(400).json({
+        success:false,
+        msg:"Missing id or name"
+      });
+    }
 
     const r = await fetch("https://fb.blooket.com/c/firebase/join", {
       method: "POST",
@@ -19,16 +35,18 @@ export default async function handler(req, res) {
 
     const data = await r.json();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       fbToken: data.fbToken,
       fbShardURL: data.fbShardURL
     });
 
   } catch (err) {
-    res.status(500).json({
-      success: false,
+
+    return res.status(500).json({
+      success:false,
       msg: err.message
     });
+
   }
 }
