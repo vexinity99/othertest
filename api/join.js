@@ -21,11 +21,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const r = await fetch("https://fb.blooket.com/c/firebase/join", {
+    const r = await fetch("https://play.blooket.com/api/firebase/join", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "user-agent": "Mozilla/5.0"
+        "user-agent": "Mozilla/5.0",
+        "origin": "https://play.blooket.com",
+        "referer": "https://play.blooket.com/"
       },
       body: JSON.stringify({
         id,
@@ -33,25 +35,12 @@ export default async function handler(req, res) {
       })
     });
 
-    const text = await r.text();
+    const data = await r.json();
 
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
+    if (!data.success) {
       return res.status(500).json({
         success:false,
-        msg:"Blooket returned invalid response",
-        raw:text.slice(0,200)
-      });
-    }
-
-    if (!data.fbToken) {
-      return res.status(500).json({
-        success:false,
-        msg:"Token not returned",
-        data
+        msg:data.error || "Join failed"
       });
     }
 
