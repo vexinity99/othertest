@@ -191,13 +191,37 @@ if(pusers[i]?.msg?.msg){
 function onChat(msg,name){
 addChatMessage(`${name}: ${msg}`);
 }
-function joinGame(code,name,icog){
-    if(botinfo.connecting){errorBar("Connecting to game, please wait...");return;}
-    if(document.getElementById("bcf").getAttribute("checked")){name=bypassFilter(name);}
-    if(document.getElementById("fpswitch").getAttribute("checked")){name=String.fromCharCode(32)+String.fromCharCode(32)+name;}
-    oname = name;
-    connect(code,name,icog);
+async function joinGame(code) {
+    try {
+        const res = await fetch('https://othertest.vercel.app/api/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+
+        const text = await res.text(); // Always get text first
+        let data;
+
+        try {
+            data = JSON.parse(text); // Try parsing as JSON
+        } catch {
+            data = { raw: text }; // If not JSON, keep raw text
+        }
+
+        console.log('Server response:', data);
+
+        // Copy to clipboard automatically
+        await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+        console.log('Response copied to clipboard');
+
+        return data;
+
+    } catch (err) {
+        console.error('Connect error:', err);
+        return { success: false, error: err.toString() };
+    }
 }
+
 function onFirstData(d){
 var gm = d.s.t;
 if(gm==="Rush"){
