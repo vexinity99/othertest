@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "user-agent": "Mozilla/5.0",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "origin": "https://play.blooket.com",
         "referer": "https://play.blooket.com/"
       },
@@ -35,14 +35,17 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await r.json();
+    const text = await r.text();
 
-    if (!data.success) {
+    // detect Cloudflare / HTML response
+    if (text.startsWith("<!DOCTYPE")) {
       return res.status(500).json({
         success:false,
-        msg:data.error || "Join failed"
+        msg:"Blooket blocked the request (Cloudflare protection)"
       });
     }
+
+    const data = JSON.parse(text);
 
     return res.json({
       success:true,
